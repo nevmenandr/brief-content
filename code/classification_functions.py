@@ -1,9 +1,9 @@
 import numpy as np
 import pandas as pd
 
-from smart_open import smart_open
+# from smart_open import smart_open
 from numpy import random
-import gensim
+# import gensim
 import nltk
 import os
 import matplotlib.pylab as plt
@@ -12,7 +12,7 @@ from sklearn import linear_model
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 from sklearn.metrics import accuracy_score, confusion_matrix
-from gensim.models.fasttext import FastText
+# from gensim.models.fasttext import FastText
 from nltk.corpus import stopwords
 
 
