@@ -1,0 +1,2 @@
+library(stylo)
+stylo()
