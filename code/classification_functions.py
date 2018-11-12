@@ -1,19 +1,21 @@
 import numpy as np
 import pandas as pd
-
-# from smart_open import smart_open
-from numpy import random
-# import gensim
+import gensim
 import nltk
 import os
 import matplotlib.pylab as plt
+from smart_open import smart_open
+from numpy import random
 from sklearn.model_selection import train_test_split
-from sklearn import linear_model
+from sklearn.linear_model import LogisticRegression
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
-from sklearn.metrics import accuracy_score, confusion_matrix
-# from gensim.models.fasttext import FastText
-from nltk.corpus import stopwords
+from sklearn.metrics import accuracy_score, f1_score, confusion_matrix, classification_report
+from gensim.models.fasttext import FastText
+
+import logging
+logging.root.handlers = []  # Jupyter messes up logging so needs a reset
+logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
 
 
 def print_plot(df, index, label):
@@ -21,7 +23,6 @@ def print_plot(df, index, label):
     if len(example) > 0:
         print(example[0], '\n\n')
         print(label + ':', example[1])
-
         
 def plot_confusion_matrix(cm, tags, title='Confusion matrix', cmap=plt.cm.Blues):
     plt.imshow(cm, interpolation='nearest',  cmap=cmap)
@@ -35,28 +36,31 @@ def plot_confusion_matrix(cm, tags, title='Confusion matrix', cmap=plt.cm.Blues)
     plt.ylabel('True label')
     plt.xlabel('Predicted label')
 
+def evaluate_prediction(target, predictions, tags, title="Confusion matrix"):
+    print(classification_report(target, predictions))
+    print('accuracy ', accuracy_score(target, predictions))
+    print('Макросредняя F1 мера - ', f1_score(target, predictions, average='macro'))
+    print('Микросредняя F1 мера - ', f1_score(target, predictions, average='micro'))
+    print()
     
-def evaluate_prediction(predictions, target, tags, title="Confusion matrix"):
-    print('accuracy %s' % accuracy_score(target, predictions))
     cm = confusion_matrix(target, predictions)
     print('confusion matrix\n %s' % cm)
     print('(row=expected, col=predicted)')
-    
     cm_normalized = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
     plot_confusion_matrix(cm_normalized, tags, title + ' (normalized)')
-
     
-def predict(vectorizer, classifier, data, target, tags):
-    data_features = vectorizer.transform(data)
-    predictions = classifier.predict(data_features)
-    evaluate_prediction(predictions, target, tags)
-
-    
-def most_influential_words(vectorizer, logreg, genre_index=0, num_words=10):
+def most_influential_words(vectorizer, logreg, genre_index=0, num_words=20):
     features = vectorizer.get_feature_names()
     max_coef = sorted(enumerate(logreg.coef_[genre_index]), key=lambda x:x[1], reverse=True)
     return [features[x[0]] for x in max_coef[:num_words]]
 
+def save_wordlists(vectorizer, name, clf, labels):
+    d = {}
+    for i in range(len(labels)):
+        d[labels[i]] = most_influential_words(vectorizer, clf, genre_index=i, num_words=20)
+    df = pd.DataFrame(d)
+    with open(name + '.txt', 'w', encoding='utf-8') as fw:
+        df.to_csv(name + '.tsv', sep='\t', index=None)
 
 def word_averaging(wv, words):
     all_words, mean = set(), []
